@@ -32,7 +32,7 @@
       transition: background-color 0.4s ease, color 0.4s ease;
       display: flex;
       flex-direction: column;
-      gap: 15px;
+      gap: 12px; /* Slightly tighter gap */
       overflow: hidden; 
       position: relative; 
     }
@@ -48,6 +48,16 @@
       100% { opacity: 1; }
     }
 
+    @keyframes slideFadeIn {
+      0% { opacity: 0; transform: translateX(-15px); }
+      100% { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes slideUpFade {
+      0% { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
     /* --- UI Components --- */
     .tab-container {
       display: flex;
@@ -57,8 +67,6 @@
       scrollbar-width: none; 
       flex-shrink: 0; 
       scroll-behavior: smooth;
-      
-      /* THIS KEEPS THE TOOLTIP IN FRONT OF THE SEARCH BAR */
       position: relative;
       z-index: 1000; 
     }
@@ -73,31 +81,36 @@
       background-color: var(--bg-color);
       color: var(--text-color);
       border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      font-size: 16px;
+      width: 36px; /* Made shorter */
+      height: 36px; /* Made shorter */
+      font-size: 14px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       box-shadow: 5px 5px 10px var(--shadow-dark), 
                  -5px -5px 10px var(--shadow-light);
-      transition: all 0.2s ease-in-out;
+      transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
       flex-shrink: 0;
     }
 
+    .neo-btn:hover {
+      transform: translateY(-2px);
+    }
+
     .neo-btn:active {
-      box-shadow: inset 5px 5px 10px var(--shadow-dark), 
-                  inset -5px -5px 10px var(--shadow-light);
+      box-shadow: inset 4px 4px 8px var(--shadow-dark), 
+                  inset -4px -4px 8px var(--shadow-light);
+      transform: scale(0.92);
     }
 
     .tab-btn {
       width: auto;
       border-radius: 20px; 
-      padding: 8px 15px;
+      padding: 6px 14px; /* Shorter padding */
       gap: 8px;
       white-space: nowrap;
-      animation: fadeIn 0.3s ease forwards;
+      animation: slideFadeIn 0.35s cubic-bezier(0.25, 1, 0.5, 1) forwards;
       position: relative; 
     }
 
@@ -105,13 +118,14 @@
       box-shadow: inset 5px 5px 10px var(--shadow-dark), 
                   inset -5px -5px 10px var(--shadow-light);
       color: #007bff;
+      transform: translateY(0); /* Anchor active tab */
     }
 
     /* --- Proxy Hover Tooltip --- */
     .tab-btn::after {
       content: "Server: " attr(data-proxy-name);
       position: absolute;
-      bottom: -32px; /* Adjusted slightly */
+      bottom: -32px; 
       left: 50%;
       transform: translateX(-50%);
       background-color: var(--text-color);
@@ -124,7 +138,7 @@
       opacity: 0;
       visibility: hidden;
       transition: all 0.2s ease;
-      z-index: 9999; /* Ensures it stays on top */
+      z-index: 9999; 
       box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
       pointer-events: none;
     }
@@ -133,8 +147,7 @@
       opacity: 1;
       visibility: visible;
       bottom: -6px; 
-            z-index: 9999; /* Ensures it stays on top */
-
+      z-index: 9999; 
     }
 
     /* Favicon & Spinner */
@@ -175,61 +188,75 @@
       align-items: center;
       justify-content: center;
       opacity: 0.6;
-      transition: all 0.2s;
+      transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
     }
 
     .close-tab:hover {
       opacity: 1;
-      background-color: var(--shadow-dark);
+      background-color: #ff4d4d;
       color: #fff;
+      transform: rotate(90deg) scale(1.1); /* Spin and pop effect */
     }
 
     /* --- Controls & Iframe --- */
     form {
       display: flex;
-      gap: 15px;
+      gap: 12px;
       align-items: center;
-      padding: 15px 25px;
-      border-radius: 15px;
+      padding: 10px 20px; /* Made much shorter */
+      border-radius: 12px;
       background-color: var(--bg-color);
-      box-shadow: 9px 9px 16px var(--shadow-dark), 
-                 -9px -9px 16px var(--shadow-light);
+      box-shadow: 7px 7px 14px var(--shadow-dark), 
+                 -7px -7px 14px var(--shadow-light);
       flex-shrink: 0; 
       position: relative;
-      z-index: 100; /* Lower than tabs so tooltip goes over it */
+      z-index: 100;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    form:hover {
+      transform: translateY(-2px);
+      box-shadow: 9px 9px 18px var(--shadow-dark), 
+                 -9px -9px 18px var(--shadow-light);
     }
 
     .search-input, select {
       border: none;
       outline: none;
       background-color: var(--bg-color);
-      padding: 12px 20px;
-      border-radius: 10px;
-      font-size: 16px;
+      padding: 8px 16px; /* Shorter padding inside inputs */
+      border-radius: 8px;
+      font-size: 15px;
       color: var(--text-color);
+      transition: all 0.3s ease;
     }
 
     .search-input {
       flex-grow: 1;
-      box-shadow: inset 5px 5px 10px var(--shadow-dark), 
-                  inset -5px -5px 10px var(--shadow-light);
+      box-shadow: inset 4px 4px 8px var(--shadow-dark), 
+                  inset -4px -4px 8px var(--shadow-light);
     }
 
     .search-input:focus {
-      box-shadow: inset 7px 7px 12px var(--shadow-dark), 
-                  inset -7px -7px 12px var(--shadow-light);
+      box-shadow: inset 6px 6px 10px var(--shadow-dark), 
+                  inset -6px -6px 10px var(--shadow-light);
+      transform: scale(1.005); /* Slight expansion on focus */
     }
 
     select {
       cursor: pointer;
-      box-shadow: 5px 5px 10px var(--shadow-dark), 
-                 -5px -5px 10px var(--shadow-light);
+      box-shadow: 4px 4px 8px var(--shadow-dark), 
+                 -4px -4px 8px var(--shadow-light);
+    }
+    
+    select:hover {
+      transform: translateY(-1px);
     }
 
     /* --- Iframe Container --- */
     .iframe-wrapper {
       position: absolute;
-      top: 175px; 
+      top: 140px; /* Moved up to compensate for the shorter bar */
       bottom: 20px; 
       left: 20px;
       right: 20px;
@@ -239,7 +266,7 @@
       box-shadow: inset 7px 7px 14px var(--shadow-dark), 
                   inset -7px -7px 14px var(--shadow-light);
       box-sizing: border-box;
-      z-index: 10; /* Base level */
+      z-index: 10; 
     }
 
     .browser-frame {
@@ -253,7 +280,7 @@
 
     .browser-frame.active {
       display: block;
-      animation: fadeIn 0.4s ease forwards;
+      animation: slideUpFade 0.4s ease forwards; /* Smooth page entry */
     }
   </style>
 </head>
@@ -263,7 +290,7 @@
     <button class="neo-btn tab-btn active" data-id="tab-1" data-proxy="scramjet" data-proxy-name="Scramjet">
       <span class="spinner" id="spinner-tab-1"></span>
       <img class="tab-icon" id="icon-tab-1" src="" />
-      <span class="tab-title" id="title-tab-1">Startup</span>
+      <span class="tab-title" id="title-tab-1">New Tab</span>
       <span class="close-tab" title="Close Tab">×</span>
     </button>
     <button class="neo-btn" id="add-tab-btn" title="New Tab">+</button>
@@ -370,7 +397,7 @@
         localStorage.setItem("proxyServer", proxyValue);
       }
 
-// --- URL & TAB LOGIC ---
+      // --- URL & TAB LOGIC ---
       function updateTabAndUrl() {
         const activeFrame = document.getElementById("iframe");
         if (!activeFrame) return;
@@ -394,11 +421,9 @@
               iconImg.src = "https://starlightgg.github.io/favicon.ico";
             }
             
-            // --- THE FIX IS HERE ---
-            // Instead of forcing Scramjet, grab the currently selected proxy from localStorage
+            // Fixed block: grabs saved proxy from localStorage
             currentProxy = localStorage.getItem("proxyServer") || "scramjet";
             currentProxyName = currentProxy === "uv" ? "Ultraviolet" : "Scramjet";
-            // -----------------------
             
           } else {
             // 2. Extract URL & Proxy type
@@ -447,6 +472,7 @@
           console.warn("Cross-origin frame read error:", e);
         }
       }
+
       function showSpinner(tabId) {
         const spinner = document.getElementById(`spinner-${tabId}`);
         const icon = document.getElementById(`icon-${tabId}`);
@@ -477,7 +503,12 @@
         });
 
         const activeFrame = document.querySelector(`.frame-${tabId}`);
+        
+        // Brief removal and re-addition to re-trigger the slideUpFade animation
+        activeFrame.classList.remove("active");
+        void activeFrame.offsetWidth; 
         activeFrame.classList.add("active");
+        
         activeFrame.id = "iframe"; 
         
         activeTabId = tabId;
@@ -527,7 +558,7 @@
         newTabBtn.innerHTML = `
           <span class="spinner" id="spinner-${newTabId}"></span>
           <img class="tab-icon" id="icon-${newTabId}" src="" />
-          <span class="tab-title" id="title-${newTabId}">Startup</span>
+          <span class="tab-title" id="title-${newTabId}">New Tab</span>
           <span class="close-tab" title="Close Tab">×</span>
         `;
         newTabBtn.addEventListener("click", () => switchTab(newTabId));
@@ -608,7 +639,6 @@
             activeTabBtn.setAttribute("data-proxy-name", val === "uv" ? "Ultraviolet" : "Scramjet");
         }
 
-        // If there is an active link in the search bar, immediately reload it using the new proxy!
         const currentUrl = searchInput.value;
         if (currentUrl && currentUrl !== "idle.html") {
             loadUrlInIframe(currentUrl, val);
