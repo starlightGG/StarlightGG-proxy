@@ -370,7 +370,7 @@
         localStorage.setItem("proxyServer", proxyValue);
       }
 
-      // --- URL & TAB LOGIC ---
+// --- URL & TAB LOGIC ---
       function updateTabAndUrl() {
         const activeFrame = document.getElementById("iframe");
         if (!activeFrame) return;
@@ -386,17 +386,22 @@
           let currentProxyName = "Scramjet";
 
           // 1. Check for idle/startup page
-          if (frameHref.includes("idle.html") || frameHref === "about:blank") {
+          if (frameHref.includes("idle.html") || frameHref === "about:blank" ) {
             searchInput.value = "";
             if (tabTitleSpan) tabTitleSpan.textContent = "Startup";
             if (iconImg) {
               iconImg.style.display = "none";
               iconImg.src = "";
             }
-            currentProxy = "scramjet";
-            currentProxyName = "Scramjet";
+            
+            // --- THE FIX IS HERE ---
+            // Instead of forcing Scramjet, grab the currently selected proxy from localStorage
+            currentProxy = localStorage.getItem("proxyServer") || "scramjet";
+            currentProxyName = currentProxy === "uv" ? "Ultraviolet" : "Scramjet";
+            // -----------------------
+            
           } else {
-            // 2. Extact URL & Proxy type
+            // 2. Extract URL & Proxy type
             let targetUrl = frameHref;
             if (win.__uv$location && win.__uv$location.href) {
               targetUrl = win.__uv$location.href;
@@ -442,7 +447,6 @@
           console.warn("Cross-origin frame read error:", e);
         }
       }
-
       function showSpinner(tabId) {
         const spinner = document.getElementById(`spinner-${tabId}`);
         const icon = document.getElementById(`icon-${tabId}`);
