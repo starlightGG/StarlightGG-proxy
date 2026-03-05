@@ -36,11 +36,4 @@ To ensure your proxy stays online, prevent the environment from shutting down:
 * Right-click your Codespace name in the bottom status bar.
 * Select **Turn off Auto-delete** (or set the timeout to its maximum value).
 
----
-
-### Pro-Tips for your README:
-
-* **Add a License:** Even a simple MIT license makes your repo look more official.
-* **Use Badges:** You can add "Status: Online" or "Version" badges at the top for extra flair.
-* **Screenshots:** If users often get lost in `js/main.js`, a small screenshot of that specific code block helps immensely.
 
