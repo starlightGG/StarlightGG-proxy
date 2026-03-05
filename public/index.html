@@ -327,7 +327,7 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      if (localStorage.getItem("theme") === "dark") {
+      if (localStorage.getItem("theme") !== "dark") {
         document.documentElement.setAttribute("data-theme", "dark");
       }
 
