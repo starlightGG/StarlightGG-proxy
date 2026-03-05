@@ -23,8 +23,7 @@
 
     body {
       margin: 0;
-      /* Keep 20px padding on top and sides, but 0 on the bottom */
-      padding: 20px 20px 0 20px; 
+      padding: 5px 20px 0 20px; 
       height: 100vh;
       box-sizing: border-box;
       background-color: var(--bg-color);
@@ -34,7 +33,8 @@
       display: flex;
       flex-direction: column;
       gap: 15px;
-      overflow: hidden; /* Prevents the whole window from scrolling */
+      overflow: hidden; 
+      position: relative; 
     }
 
     /* --- Animations --- */
@@ -52,12 +52,20 @@
     .tab-container {
       display: flex;
       gap: 10px;
-      overflow-x: auto;
+      overflow-x: auto; 
       padding: 5px;
       scrollbar-width: none; 
       flex-shrink: 0; 
+      scroll-behavior: smooth;
+      
+      /* THIS KEEPS THE TOOLTIP IN FRONT OF THE SEARCH BAR */
+      position: relative;
+      z-index: 1000; 
     }
-    .tab-container::-webkit-scrollbar { display: none; }
+    
+    .tab-container::-webkit-scrollbar {
+      display: none; 
+    }
 
     .neo-btn {
       border: none;
@@ -85,11 +93,12 @@
 
     .tab-btn {
       width: auto;
-      border-radius: 10px;
-      padding: 10px 15px;
+      border-radius: 20px; 
+      padding: 8px 15px;
       gap: 8px;
       white-space: nowrap;
       animation: fadeIn 0.3s ease forwards;
+      position: relative; 
     }
 
     .tab-btn.active {
@@ -98,7 +107,44 @@
       color: #007bff;
     }
 
-    /* Loading Spinner */
+    /* --- Proxy Hover Tooltip --- */
+    .tab-btn::after {
+      content: "Server: " attr(data-proxy-name);
+      position: absolute;
+      bottom: -32px; /* Adjusted slightly */
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: var(--text-color);
+      color: var(--bg-color);
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: bold;
+      white-space: nowrap;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s ease;
+      z-index: 9999; /* Ensures it stays on top */
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+      pointer-events: none;
+    }
+
+    .tab-btn:hover::after {
+      opacity: 1;
+      visibility: visible;
+      bottom: -6px; 
+            z-index: 9999; /* Ensures it stays on top */
+
+    }
+
+    /* Favicon & Spinner */
+    .tab-icon {
+      width: 16px;
+      height: 16px;
+      display: none; 
+      border-radius: 50%;
+    }
+
     .spinner {
       display: none; 
       width: 14px;
@@ -138,6 +184,7 @@
       color: #fff;
     }
 
+    /* --- Controls & Iframe --- */
     form {
       display: flex;
       gap: 15px;
@@ -148,6 +195,8 @@
       box-shadow: 9px 9px 16px var(--shadow-dark), 
                  -9px -9px 16px var(--shadow-light);
       flex-shrink: 0; 
+      position: relative;
+      z-index: 100; /* Lower than tabs so tooltip goes over it */
     }
 
     .search-input, select {
@@ -179,16 +228,18 @@
 
     /* --- Iframe Container --- */
     .iframe-wrapper {
-      flex-grow: 1;
-      min-height: 0; 
-      /* Make it flat on the bottom edge */
-      border-radius: 15px 15px 0 0;
-      /* Zero padding on the bottom so iframe sits flush */
-      padding: 10px 10px 0 10px;
+      position: absolute;
+      top: 175px; 
+      bottom: 20px; 
+      left: 20px;
+      right: 20px;
+      border-radius: 15px; 
+      padding: 10px; 
       background-color: var(--bg-color);
       box-shadow: inset 7px 7px 14px var(--shadow-dark), 
                   inset -7px -7px 14px var(--shadow-light);
-      position: relative;
+      box-sizing: border-box;
+      z-index: 10; /* Base level */
     }
 
     .browser-frame {
@@ -196,7 +247,7 @@
       width: 100%;
       height: 100%;
       border: none;
-      border-radius: 10px 10px 0 0; /* Flat on the bottom */
+      border-radius: 10px; 
       background-color: #fff; 
     }
 
@@ -209,9 +260,10 @@
 <body>
 
   <div class="tab-container" id="tab-container">
-    <button class="neo-btn tab-btn active" data-id="tab-1">
+    <button class="neo-btn tab-btn active" data-id="tab-1" data-proxy="scramjet" data-proxy-name="Scramjet">
       <span class="spinner" id="spinner-tab-1"></span>
-      <span>Tab 1</span>
+      <img class="tab-icon" id="icon-tab-1" src="" />
+      <span class="tab-title" id="title-tab-1">Startup</span>
       <span class="close-tab" title="Close Tab">×</span>
     </button>
     <button class="neo-btn" id="add-tab-btn" title="New Tab">+</button>
@@ -227,11 +279,12 @@
       type="text"
       class="search-input search"
       placeholder="Search or enter URL"
+      autocomplete="off"
     />
     
     <select id="proxysel">
-      <option value="scramjet" selected>scramjet</option>
-      <option value="uv">ultraviolet</option>
+      <option value="scramjet">Recommended: Scramjet</option>
+      <option value="uv">Server: Ultraviolet</option>
     </select>
   </form>
 
@@ -253,24 +306,164 @@
 
       let tabCount = 1;
       let activeTabId = "tab-1";
+      const MAX_TABS = 10;
+      
       const tabContainer = document.getElementById("tab-container");
       const viewsContainer = document.getElementById("views-container");
       const addTabBtn = document.getElementById("add-tab-btn");
       const form = document.getElementById("idk");
+      const searchInput = document.getElementById("url");
+      const proxySelect = document.getElementById("proxysel");
+
+      // --- Custom Routing Logic ---
+      function uvEncode(str) {
+        if (!str) return str;
+        return encodeURIComponent(
+          str.toString().split('').map((char, ind) => {
+            return ind % 2 ? String.fromCharCode(char.charCodeAt(0) ^ 2) : char;
+          }).join('')
+        );
+      }
+
+      // Reloads the active frame using the provided proxy
+      function loadUrlInIframe(query, proxyType) {
+        if (!query || query === "idle.html" || query === "about:blank") return;
+
+        let targetUrl = query.trim();
+        if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+            if (targetUrl.includes('.') && !targetUrl.includes(' ')) {
+                targetUrl = 'https://' + targetUrl;
+            } else {
+                targetUrl = 'https://www.google.com/search?q=' + encodeURIComponent(targetUrl);
+            }
+        }
+
+        try {
+            if (targetUrl.startsWith('http')) {
+                targetUrl = new URL(targetUrl).toString(); 
+            }
+        } catch (e) {}
+
+        let finalUrl = '';
+        if (proxyType === 'uv') {
+            finalUrl = '/service/uv/' + uvEncode(targetUrl);
+        } else {
+            finalUrl = '/scramjet/' + targetUrl;
+        }
+
+        const activeFrame = document.getElementById("iframe");
+        if (activeFrame) {
+            showSpinner(activeTabId);
+            activeFrame.src = finalUrl;
+        }
+      }
+
+      function scrollToActiveTab() {
+        const activeTabBtn = document.querySelector(`.tab-btn[data-id="${activeTabId}"]`);
+        if (activeTabBtn) {
+          activeTabBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+      }
+
+      function updateGlobalProxyState(proxyValue) {
+        proxySelect.value = proxyValue;
+        localStorage.setItem("proxyServer", proxyValue);
+      }
+
+      // --- URL & TAB LOGIC ---
+      function updateTabAndUrl() {
+        const activeFrame = document.getElementById("iframe");
+        if (!activeFrame) return;
+
+        try {
+          const win = activeFrame.contentWindow;
+          const frameHref = win.location.href;
+          const activeTabBtn = document.querySelector(`.tab-btn[data-id="${activeTabId}"]`);
+          const tabTitleSpan = document.getElementById(`title-${activeTabId}`);
+          const iconImg = document.getElementById(`icon-${activeTabId}`);
+          
+          let currentProxy = "scramjet";
+          let currentProxyName = "Scramjet";
+
+          // 1. Check for idle/startup page
+          if (frameHref.includes("idle.html") || frameHref === "about:blank") {
+            searchInput.value = "";
+            if (tabTitleSpan) tabTitleSpan.textContent = "Startup";
+            if (iconImg) {
+              iconImg.style.display = "none";
+              iconImg.src = "";
+            }
+            currentProxy = "scramjet";
+            currentProxyName = "Scramjet";
+          } else {
+            // 2. Extact URL & Proxy type
+            let targetUrl = frameHref;
+            if (win.__uv$location && win.__uv$location.href) {
+              targetUrl = win.__uv$location.href;
+              currentProxy = "uv";
+              currentProxyName = "Ultraviolet";
+            } else if (frameHref.includes('/scramjet/')) {
+              targetUrl = decodeURIComponent(frameHref.substring(frameHref.indexOf('/scramjet/') + 10));
+              currentProxy = "scramjet";
+              currentProxyName = "Scramjet";
+            } else if (frameHref.includes('/uv/service/')) {
+              targetUrl = decodeURIComponent(frameHref.substring(frameHref.indexOf('/uv/service/') + 12));
+              currentProxy = "uv";
+              currentProxyName = "Ultraviolet";
+            }
+            
+            searchInput.value = targetUrl;
+
+            // 3. Update Title
+            const doc = activeFrame.contentDocument || win.document;
+            if (doc.title && tabTitleSpan) {
+              const maxLen = 18;
+              tabTitleSpan.textContent = doc.title.length > maxLen ? doc.title.substring(0, maxLen) + "..." : doc.title;
+            }
+
+            // 4. Fetch Favicon
+            try {
+              if (iconImg) {
+                const parsedUrl = new URL(targetUrl);
+                iconImg.onload = () => { iconImg.style.display = "inline-block"; }; 
+                iconImg.onerror = () => { iconImg.style.display = "none"; }; 
+                iconImg.src = `https://www.google.com/s2/favicons?domain=${parsedUrl.hostname}&sz=32`;
+              }
+            } catch(e) {}
+          }
+
+          if (activeTabBtn) {
+            activeTabBtn.setAttribute("data-proxy", currentProxy);
+            activeTabBtn.setAttribute("data-proxy-name", currentProxyName);
+          }
+          updateGlobalProxyState(currentProxy);
+
+        } catch (e) {
+          console.warn("Cross-origin frame read error:", e);
+        }
+      }
 
       function showSpinner(tabId) {
         const spinner = document.getElementById(`spinner-${tabId}`);
+        const icon = document.getElementById(`icon-${tabId}`);
         if (spinner) spinner.style.display = 'inline-block';
+        if (icon) icon.style.display = 'none'; 
       }
 
       function hideSpinner(tabId) {
         const spinner = document.getElementById(`spinner-${tabId}`);
+        const icon = document.getElementById(`icon-${tabId}`);
         if (spinner) spinner.style.display = 'none';
+        
+        if (icon && icon.src && !icon.src.endsWith(window.location.host + "/")) {
+          icon.style.display = 'inline-block';
+        }
       }
 
       function switchTab(tabId) {
         document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
-        document.querySelector(`.tab-btn[data-id="${tabId}"]`).classList.add("active");
+        const newActiveBtn = document.querySelector(`.tab-btn[data-id="${tabId}"]`);
+        newActiveBtn.classList.add("active");
 
         document.querySelectorAll(".browser-frame").forEach(frame => {
           frame.classList.remove("active");
@@ -284,6 +477,12 @@
         activeFrame.id = "iframe"; 
         
         activeTabId = tabId;
+        
+        const tabProxy = newActiveBtn.getAttribute("data-proxy") || "scramjet";
+        updateGlobalProxyState(tabProxy);
+
+        updateTabAndUrl();
+        scrollToActiveTab();
       }
 
       function closeTab(tabId, event) {
@@ -309,15 +508,22 @@
       }
 
       function createNewTab() {
+        const currentTabs = document.querySelectorAll(".tab-btn").length;
+        if (currentTabs >= MAX_TABS) return; 
+
         tabCount++;
         const newTabId = `tab-${tabCount}`;
 
         const newTabBtn = document.createElement("button");
         newTabBtn.className = "neo-btn tab-btn";
         newTabBtn.setAttribute("data-id", newTabId);
+        newTabBtn.setAttribute("data-proxy", "scramjet");
+        newTabBtn.setAttribute("data-proxy-name", "Scramjet");
+        
         newTabBtn.innerHTML = `
           <span class="spinner" id="spinner-${newTabId}"></span>
-          <span>Tab ${tabCount}</span>
+          <img class="tab-icon" id="icon-${newTabId}" src="" />
+          <span class="tab-title" id="title-${newTabId}">Startup</span>
           <span class="close-tab" title="Close Tab">×</span>
         `;
         newTabBtn.addEventListener("click", () => switchTab(newTabId));
@@ -331,25 +537,34 @@
         
         newFrame.addEventListener("load", () => {
           hideSpinner(newTabId);
+          if (activeTabId === newTabId) updateTabAndUrl();
         });
 
         viewsContainer.appendChild(newFrame);
         switchTab(newTabId);
       }
 
+      // --- Initialization ---
       const firstTabBtn = document.querySelector(`[data-id="tab-1"]`);
       const firstIframe = document.querySelector(".frame-tab-1");
       
       firstTabBtn.addEventListener("click", () => switchTab("tab-1"));
       firstTabBtn.querySelector(".close-tab").addEventListener("click", (e) => closeTab("tab-1", e));
-      firstIframe.addEventListener("load", () => hideSpinner("tab-1"));
+      
+      firstIframe.addEventListener("load", () => {
+        hideSpinner("tab-1");
+        if (activeTabId === "tab-1") updateTabAndUrl();
+      });
       
       addTabBtn.addEventListener("click", createNewTab);
 
-      form.addEventListener("submit", () => {
-        showSpinner(activeTabId);
+      // --- Handles Enter Key Submits safely inside index.html ---
+      form.addEventListener("submit", (e) => {
+        e.preventDefault(); 
+        loadUrlInIframe(searchInput.value, proxySelect.value);
       });
 
+      // Navigation
       document.getElementById("back-btn").addEventListener("click", () => {
         try { document.getElementById("iframe").contentWindow.history.back(); } catch(e) {}
       });
@@ -365,6 +580,34 @@
           activeFrame.contentWindow.location.reload(); 
         } catch(e) { 
           activeFrame.src = activeFrame.src; 
+        }
+      });
+
+      // --- Server Dropdown & Auto-Refresh Logic ---
+      const savedProxy = localStorage.getItem("proxyServer");
+      if (savedProxy) {
+        updateGlobalProxyState(savedProxy);
+        firstTabBtn.setAttribute("data-proxy", savedProxy);
+        firstTabBtn.setAttribute("data-proxy-name", savedProxy === "uv" ? "Ultraviolet" : "Scramjet");
+      } else {
+        updateGlobalProxyState("scramjet");
+      }
+
+      // The Magic Trigger
+      proxySelect.addEventListener("change", (e) => {
+        const val = e.target.value;
+        updateGlobalProxyState(val);
+        
+        const activeTabBtn = document.querySelector(`.tab-btn[data-id="${activeTabId}"]`);
+        if (activeTabBtn) {
+            activeTabBtn.setAttribute("data-proxy", val);
+            activeTabBtn.setAttribute("data-proxy-name", val === "uv" ? "Ultraviolet" : "Scramjet");
+        }
+
+        // If there is an active link in the search bar, immediately reload it using the new proxy!
+        const currentUrl = searchInput.value;
+        if (currentUrl && currentUrl !== "idle.html") {
+            loadUrlInIframe(currentUrl, val);
         }
       });
     });

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,30 +16,15 @@
     <style>
         /* --- CORE VARIABLES --- */
         :root {
-            /* Light Theme (Default) */
             --bg-color: #e0e5ec;
             --text-color: #333333;
             --primary-color: #4c68ff;
-            --primary-light: #7c90ff;
-            --primary-dark: #3a50cc;
-            --secondary-bg: #e0e5ec;
-            --glass-color: rgba(255, 255, 255, 0.4);
-            --card-glass: rgba(255, 255, 255, 0.65);
-            --line-color: rgba(0, 0, 0, 0.07);
-            --star-color: #E5B500;
-            --toggle-size: 4rem;
-            --border-radius: 20px;
             --font-stack: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 
             /* Neumorphic Shadows (Light) */
             --shadow-light-top: -6px -6px 12px #ffffff;
             --shadow-light-bottom: 6px 6px 12px rgba(0, 0, 0, 0.15);
-            --shadow-inset: inset 2px 2px 5px rgba(0, 0, 0, 0.1), inset -2px -2px 5px #ffffff;
-            --card-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            
-            --highlight-light: #ffffff;
-            --shadow-dark: #a3b1c6;
-            --active-color: #3498db;
+            --shadow-inset: inset 4px 4px 8px rgba(0, 0, 0, 0.1), inset -4px -4px 8px #ffffff;
         }
 
         /* --- DARK THEME OVERRIDES --- */
@@ -49,8 +33,7 @@
             --text-color: #e0e5ec;
             --shadow-light-top: -6px -6px 12px #252932;
             --shadow-light-bottom: 6px 6px 12px #0f1115;
-            --shadow-inset: inset 2px 2px 5px #0f1115, inset -2px -2px 5px #252932;
-            --card-glass: rgba(30, 34, 42, 0.8);
+            --shadow-inset: inset 4px 4px 8px #0f1115, inset -4px -4px 8px #252932;
         }
 
         body {
@@ -60,23 +43,27 @@
             color: var(--text-color);
             font-family: var(--font-stack);
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
             overflow: hidden;
+            position: relative; 
         }
 
         .display-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 1.5rem;
+            gap: 2rem;
+            width: 100%;
+            max-width: 500px;
         }
 
-        /* The "Lifted" Neumorphic Circle */
+        /* --- Main Top Icon --- */
         .icon-circle {
-            width: 100px;
-            height: 100px;
+            width: 80px;
+            height: 80px;
             background: var(--bg-color);
             border-radius: 50%;
             display: flex;
@@ -84,33 +71,132 @@
             align-items: center;
             box-shadow: var(--shadow-light-top), var(--shadow-light-bottom);
             color: var(--primary-color);
+            transition: all 0.3s ease;
+        }
+
+        .icon-circle svg {
+            width: 35px;
+            height: 35px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .icon-circle:hover svg {
+            transform: rotate(90deg) scale(1.15);
         }
 
         .label {
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             font-weight: 700;
             letter-spacing: 2px;
             text-transform: uppercase;
             color: var(--text-color);
             opacity: 0.9;
         }
-        .info {
-            font-size: 1rem;
-            font-weight: 300;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: var(--text-color);
-            opacity: 0.9;
+
+        /* --- Search Bar --- */
+        form {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 5px;
+            padding: 0 20px; /* Keeps it from touching the absolute edges of small screens */
+            box-sizing: border-box;
         }
 
-        svg {
-            width: 40px;
-            height: 40px;
-            fill: none;
-            stroke: currentColor;
-            stroke-width: 2.5;
-            stroke-linecap: round;
-            stroke-linejoin: round;
+        .search-input {
+            width: 100%;
+            max-width: 450px;
+            padding: 15px 25px;
+            border: 2px solid transparent; 
+            outline: none;
+            border-radius: 30px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1rem;
+            box-shadow: var(--shadow-inset);
+            transition: all 0.3s ease;
+            box-sizing: border-box; /* Fixes text cutting off visually! */
+        }
+
+        .search-input:focus {
+            box-shadow: inset 6px 6px 12px rgba(0, 0, 0, 0.15), inset -6px -6px 12px var(--shadow-light-top);
+            border-color: var(--primary-color); 
+        }
+
+        /* --- App Buttons --- */
+        .buttons-container {
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .app-btn {
+            width: 80px;
+            height: 80px;
+            border: none;
+            outline: none;
+            border-radius: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            cursor: pointer;
+            box-shadow: var(--shadow-light-top), var(--shadow-light-bottom);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+            
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .app-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 8px 8px 16px rgba(0, 0, 0, 0.15), -8px -8px 16px var(--shadow-light-top);
+        }
+
+        .app-btn:active {
+            transform: translateY(2px);
+            box-shadow: var(--shadow-inset);
+            color: var(--primary-color);
+        }
+
+        .app-icon {
+            width: 28px;
+            height: 28px;
+            fill: currentColor; 
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.3s ease;
+        }
+
+        .app-btn:hover .app-icon {
+            transform: scale(1.3);
+            color: var(--primary-color);
+        }
+
+        .app-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            opacity: 0.8;
+            transition: opacity 0.3s ease;
+        }
+
+        /* --- Bottom Info --- */
+        .info {
+            position: absolute;
+            bottom: 1px;
+            font-size: 0.75rem;
+            font-weight: 400;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-color);
+            opacity: 0.5;
+            text-align: center;
         }
     </style>
 </head>
@@ -123,9 +209,119 @@
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
         </div>
-        <div class="label">Search</div>
-        <div class = "info">Some websites may not be usable on here!</div>
+        
+        <div class="label">Startup</div>
+
+        <form id="search-form">
+            <input 
+                type="text" 
+                id="search-input" 
+                class="search-input" 
+                placeholder="Search the web or enter URL..." 
+                autocomplete="off"
+                autofocus
+            >
+        </form>
+
+        <div class="buttons-container">
+            
+            <button type="button" class="app-btn" data-url="https://www.google.com">
+                <svg class="app-icon" viewBox="0 0 24 24">
+                    <path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z"/>
+                </svg>
+                <span class="app-title">Google</span>
+            </button>
+
+            <button type="button" class="app-btn" data-url="https://fmhy.net">
+                <svg class="app-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+                <span class="app-title">FMHY</span>
+            </button>
+
+            <button type="button" class="app-btn" data-url="https://duckduckgo.com">
+                <svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <circle cx="12" cy="11" r="3"></circle>
+                    <line x1="14.5" y1="13.5" x2="16.5" y2="15.5"></line>
+                </svg>
+                <span class="app-title">DuckDuckGo</span>
+            </button>
+
+        </div>
     </div>
 
+    <div class="info">Some websites may not be usable on here!</div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('search-form');
+            const input = document.getElementById('search-input');
+            const appButtons = document.querySelectorAll('.app-btn');
+
+            // --- Ultraviolet XOR Encoder ---
+            function uvEncode(str) {
+                if (!str) return str;
+                return encodeURIComponent(
+                    str.toString().split('').map((char, ind) => {
+                        return ind % 2 ? String.fromCharCode(char.charCodeAt(0) ^ 2) : char;
+                    }).join('')
+                );
+            }
+
+            // --- URL Routing Logic ---
+            function navigateTo(query) {
+                if (!query) return;
+
+                // 1. Format into a valid URL or Search URL
+                let targetUrl = query;
+                if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+                    if (targetUrl.includes('.') && !targetUrl.includes(' ')) {
+                        targetUrl = 'https://' + targetUrl;
+                    } else {
+                        targetUrl = 'https://www.google.com/search?q=' + encodeURIComponent(targetUrl);
+                    }
+                }
+
+                // 2. Add a trailing slash automatically to prevent proxy cutoffs!
+                try {
+                    if (targetUrl.startsWith('http')) {
+                        targetUrl = new URL(targetUrl).toString(); 
+                    }
+                } catch (e) {
+                    // Ignore if URL is somehow invalid
+                }
+
+                // 3. Get Proxy from LocalStorage (Fallback to scramjet)
+                const proxy = localStorage.getItem('proxyServer') || 'scramjet';
+                let finalUrl = '';
+
+                // 4. Prepend the correct proxy directory and encode
+                if (proxy === 'scramjet') {
+                    finalUrl = '/scramjet/' + targetUrl; 
+                } else if (proxy === 'uv') {
+                    finalUrl = '/service/uv/' + uvEncode(targetUrl);
+                } else {
+                    finalUrl = '/scramjet/' + targetUrl;
+                }
+
+                // 5. Redirect the iframe
+                window.location.href = finalUrl;
+            }
+
+            // Handle Search Bar Submit
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                navigateTo(input.value.trim());
+            });
+
+            // Handle App Buttons
+            appButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    navigateTo(btn.getAttribute('data-url'));
+                });
+            });
+        });
+    </script>
 </body>
 </html>
