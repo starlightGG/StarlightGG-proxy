@@ -388,10 +388,10 @@
           // 1. Check for idle/startup page
           if (frameHref.includes("idle.html") || frameHref === "about:blank" ) {
             searchInput.value = "";
-            if (tabTitleSpan) tabTitleSpan.textContent = "Startup";
+            if (tabTitleSpan) tabTitleSpan.textContent = "New Tab";
             if (iconImg) {
-              iconImg.style.display = "none";
-              iconImg.src = "";
+              iconImg.style.display = "flex";
+              iconImg.src = "https://starlightgg.github.io/favicon.ico";
             }
             
             // --- THE FIX IS HERE ---
