@@ -1,21 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proxy Browser</title>
+  
+  <style>
+    /* --- Theming & Variables --- */
+    :root {
+      --bg-color: #e0e5ec;
+      --shadow-light: #ffffff;
+      --shadow-dark: #a3b1c6;
+      --text-color: #4a4a4a;
+    }
+
+    [data-theme="dark"] {
+      --bg-color: #2b2b2b;
+      --shadow-light: #3a3a3a;
+      --shadow-dark: #1c1c1c;
+      --text-color: #e0e5ec;
+    }
+
+    body {
+      margin: 0;
+      /* Keep 20px padding on top and sides, but 0 on the bottom */
+      padding: 20px 20px 0 20px; 
+      height: 100vh;
+      box-sizing: border-box;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      transition: background-color 0.4s ease, color 0.4s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      overflow: hidden; /* Prevents the whole window from scrolling */
+    }
+
+    /* --- Animations --- */
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
+    /* --- UI Components --- */
+    .tab-container {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 5px;
+      scrollbar-width: none; 
+      flex-shrink: 0; 
+    }
+    .tab-container::-webkit-scrollbar { display: none; }
+
+    .neo-btn {
+      border: none;
+      outline: none;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 5px 5px 10px var(--shadow-dark), 
+                 -5px -5px 10px var(--shadow-light);
+      transition: all 0.2s ease-in-out;
+      flex-shrink: 0;
+    }
+
+    .neo-btn:active {
+      box-shadow: inset 5px 5px 10px var(--shadow-dark), 
+                  inset -5px -5px 10px var(--shadow-light);
+    }
+
+    .tab-btn {
+      width: auto;
+      border-radius: 10px;
+      padding: 10px 15px;
+      gap: 8px;
+      white-space: nowrap;
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    .tab-btn.active {
+      box-shadow: inset 5px 5px 10px var(--shadow-dark), 
+                  inset -5px -5px 10px var(--shadow-light);
+      color: #007bff;
+    }
+
+    /* Loading Spinner */
+    .spinner {
+      display: none; 
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--text-color);
+      border-top: 2px solid transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .tab-btn.active .spinner {
+      border-color: #007bff;
+      border-top-color: transparent;
+    }
+
+    .close-tab {
+      background: none;
+      border: none;
+      color: inherit;
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.6;
+      transition: all 0.2s;
+    }
+
+    .close-tab:hover {
+      opacity: 1;
+      background-color: var(--shadow-dark);
+      color: #fff;
+    }
+
+    form {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      padding: 15px 25px;
+      border-radius: 15px;
+      background-color: var(--bg-color);
+      box-shadow: 9px 9px 16px var(--shadow-dark), 
+                 -9px -9px 16px var(--shadow-light);
+      flex-shrink: 0; 
+    }
+
+    .search-input, select {
+      border: none;
+      outline: none;
+      background-color: var(--bg-color);
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 16px;
+      color: var(--text-color);
+    }
+
+    .search-input {
+      flex-grow: 1;
+      box-shadow: inset 5px 5px 10px var(--shadow-dark), 
+                  inset -5px -5px 10px var(--shadow-light);
+    }
+
+    .search-input:focus {
+      box-shadow: inset 7px 7px 12px var(--shadow-dark), 
+                  inset -7px -7px 12px var(--shadow-light);
+    }
+
+    select {
+      cursor: pointer;
+      box-shadow: 5px 5px 10px var(--shadow-dark), 
+                 -5px -5px 10px var(--shadow-light);
+    }
+
+    /* --- Iframe Container --- */
+    .iframe-wrapper {
+      flex-grow: 1;
+      min-height: 0; 
+      /* Make it flat on the bottom edge */
+      border-radius: 15px 15px 0 0;
+      /* Zero padding on the bottom so iframe sits flush */
+      padding: 10px 10px 0 10px;
+      background-color: var(--bg-color);
+      box-shadow: inset 7px 7px 14px var(--shadow-dark), 
+                  inset -7px -7px 14px var(--shadow-light);
+      position: relative;
+    }
+
+    .browser-frame {
+      display: none;
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: 10px 10px 0 0; /* Flat on the bottom */
+      background-color: #fff; 
+    }
+
+    .browser-frame.active {
+      display: block;
+      animation: fadeIn 0.4s ease forwards;
+    }
+  </style>
+</head>
 <body>
+
+  <div class="tab-container" id="tab-container">
+    <button class="neo-btn tab-btn active" data-id="tab-1">
+      <span class="spinner" id="spinner-tab-1"></span>
+      <span>Tab 1</span>
+      <span class="close-tab" title="Close Tab">×</span>
+    </button>
+    <button class="neo-btn" id="add-tab-btn" title="New Tab">+</button>
+  </div>
+
   <form id="idk">
+    <button type="button" id="back-btn" class="neo-btn" title="Back">◀</button>
+    <button type="button" id="forward-btn" class="neo-btn" title="Forward">▶</button>
+    <button type="button" id="refresh-btn" class="neo-btn" title="Refresh">↻</button>
+
     <input
       id="url"
       type="text"
       class="search-input search"
-      placeholder="Search"
+      placeholder="Search or enter URL"
     />
+    
     <select id="proxysel">
+      <option value="scramjet" selected>scramjet</option>
       <option value="uv">ultraviolet</option>
-      <option value="scramjet">scramjet</option>
     </select>
   </form>
-  <iframe id="iframe" width="100%" height="100%"></iframe>
+
+  <div class="iframe-wrapper" id="views-container">
+    <iframe id="iframe" src="idle.html" class="browser-frame frame-tab-1 active"></iframe>
+  </div>
 
   <script src="/baremux/index.js" defer></script>
   <script src="/uv/uv.bundle.js" defer></script>
   <script src="/uv/uv.config.js" defer></script>
   <script src="/scram/scramjet.all.js" defer></script>
   <script src="/stuff.js" defer></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      if (localStorage.getItem("theme") === "dark") {
+        document.documentElement.setAttribute("data-theme", "dark");
+      }
+
+      let tabCount = 1;
+      let activeTabId = "tab-1";
+      const tabContainer = document.getElementById("tab-container");
+      const viewsContainer = document.getElementById("views-container");
+      const addTabBtn = document.getElementById("add-tab-btn");
+      const form = document.getElementById("idk");
+
+      function showSpinner(tabId) {
+        const spinner = document.getElementById(`spinner-${tabId}`);
+        if (spinner) spinner.style.display = 'inline-block';
+      }
+
+      function hideSpinner(tabId) {
+        const spinner = document.getElementById(`spinner-${tabId}`);
+        if (spinner) spinner.style.display = 'none';
+      }
+
+      function switchTab(tabId) {
+        document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+        document.querySelector(`.tab-btn[data-id="${tabId}"]`).classList.add("active");
+
+        document.querySelectorAll(".browser-frame").forEach(frame => {
+          frame.classList.remove("active");
+          if (frame.id === "iframe") {
+            frame.removeAttribute("id");
+          }
+        });
+
+        const activeFrame = document.querySelector(`.frame-${tabId}`);
+        activeFrame.classList.add("active");
+        activeFrame.id = "iframe"; 
+        
+        activeTabId = tabId;
+      }
+
+      function closeTab(tabId, event) {
+        event.stopPropagation();
+        const allTabs = document.querySelectorAll(".tab-btn");
+        if (allTabs.length === 1) return; 
+
+        const tabBtnToRemove = document.querySelector(`.tab-btn[data-id="${tabId}"]`);
+        const frameToRemove = document.querySelector(`.frame-${tabId}`);
+
+        if (activeTabId === tabId) {
+          let nextTabToActivate = tabBtnToRemove.previousElementSibling;
+          if (!nextTabToActivate || !nextTabToActivate.classList.contains("tab-btn")) {
+            nextTabToActivate = tabBtnToRemove.nextElementSibling;
+          }
+          if (nextTabToActivate && nextTabToActivate.classList.contains("tab-btn")) {
+            switchTab(nextTabToActivate.getAttribute("data-id"));
+          }
+        }
+
+        tabBtnToRemove.remove();
+        frameToRemove.remove();
+      }
+
+      function createNewTab() {
+        tabCount++;
+        const newTabId = `tab-${tabCount}`;
+
+        const newTabBtn = document.createElement("button");
+        newTabBtn.className = "neo-btn tab-btn";
+        newTabBtn.setAttribute("data-id", newTabId);
+        newTabBtn.innerHTML = `
+          <span class="spinner" id="spinner-${newTabId}"></span>
+          <span>Tab ${tabCount}</span>
+          <span class="close-tab" title="Close Tab">×</span>
+        `;
+        newTabBtn.addEventListener("click", () => switchTab(newTabId));
+        newTabBtn.querySelector(".close-tab").addEventListener("click", (e) => closeTab(newTabId, e));
+        
+        tabContainer.insertBefore(newTabBtn, addTabBtn);
+
+        const newFrame = document.createElement("iframe");
+        newFrame.className = `browser-frame frame-${newTabId}`;
+        newFrame.src = "idle.html";
+        
+        newFrame.addEventListener("load", () => {
+          hideSpinner(newTabId);
+        });
+
+        viewsContainer.appendChild(newFrame);
+        switchTab(newTabId);
+      }
+
+      const firstTabBtn = document.querySelector(`[data-id="tab-1"]`);
+      const firstIframe = document.querySelector(".frame-tab-1");
+      
+      firstTabBtn.addEventListener("click", () => switchTab("tab-1"));
+      firstTabBtn.querySelector(".close-tab").addEventListener("click", (e) => closeTab("tab-1", e));
+      firstIframe.addEventListener("load", () => hideSpinner("tab-1"));
+      
+      addTabBtn.addEventListener("click", createNewTab);
+
+      form.addEventListener("submit", () => {
+        showSpinner(activeTabId);
+      });
+
+      document.getElementById("back-btn").addEventListener("click", () => {
+        try { document.getElementById("iframe").contentWindow.history.back(); } catch(e) {}
+      });
+
+      document.getElementById("forward-btn").addEventListener("click", () => {
+        try { document.getElementById("iframe").contentWindow.history.forward(); } catch(e) {}
+      });
+
+      document.getElementById("refresh-btn").addEventListener("click", () => {
+        showSpinner(activeTabId);
+        const activeFrame = document.getElementById("iframe");
+        try { 
+          activeFrame.contentWindow.location.reload(); 
+        } catch(e) { 
+          activeFrame.src = activeFrame.src; 
+        }
+      });
+    });
+  </script>
 </body>
+</html>
